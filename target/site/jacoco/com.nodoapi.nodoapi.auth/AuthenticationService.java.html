@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthenticationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nodo-api</a> &gt; <a href="index.source.html" class="el_package">com.nodoapi.nodoapi.auth</a> &gt; <span class="el_source">AuthenticationService.java</span></div><h1>AuthenticationService.java</h1><pre class="source lang-java linenums">package com.nodoapi.nodoapi.auth;
+
+import com.nodoapi.nodoapi.config.JwtService;
+import com.nodoapi.nodoapi.persistence.entity.Rol;
+import com.nodoapi.nodoapi.persistence.entity.User;
+import com.nodoapi.nodoapi.persistence.repository.UserRepository;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+@Service
+public class AuthenticationService {
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
+
+<span class="nc" id="L19">    public AuthenticationService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager) {</span>
+<span class="nc" id="L20">        this.userRepository = userRepository;</span>
+<span class="nc" id="L21">        this.passwordEncoder = passwordEncoder;</span>
+<span class="nc" id="L22">        this.jwtService = jwtService;</span>
+<span class="nc" id="L23">        this.authenticationManager = authenticationManager;</span>
+<span class="nc" id="L24">    }</span>
+
+    public RegisterResponse register(RegisterRequest registerRequest) {
+<span class="nc bnc" id="L27" title="All 2 branches missed.">        if(userRepository.findByEmail(registerRequest.getEmail()).isPresent()){</span>
+<span class="nc" id="L28">            return RegisterResponse.builder().message(&quot;The user already exist in database&quot;).status(0).build();</span>
+        }
+<span class="nc" id="L30">        var user = User.builder()</span>
+<span class="nc" id="L31">                .age(registerRequest.getAge())</span>
+<span class="nc" id="L32">                .name(registerRequest.getName())</span>
+<span class="nc" id="L33">                .idRol(registerRequest.getIdRol())</span>
+<span class="nc" id="L34">                .email(registerRequest.getEmail())</span>
+<span class="nc" id="L35">                .password(passwordEncoder.encode(registerRequest.getPassword()))</span>
+<span class="nc" id="L36">                .build();</span>
+<span class="nc" id="L37">        var userCreated = userRepository.save(user);</span>
+<span class="nc" id="L38">        var jwtToken = jwtService.generateToken(user);</span>
+<span class="nc" id="L39">        return RegisterResponse.builder().message(&quot;User created succesfully&quot;).status(1).idPerson(userCreated.getIdPerson()).build();</span>
+    }
+
+    public AutheticationResponse authenticate(AuthenticationRequest authenticationRequest) {
+<span class="nc" id="L43">        authenticationManager.authenticate(</span>
+                new UsernamePasswordAuthenticationToken(
+<span class="nc" id="L45">                    authenticationRequest.getEmail(),</span>
+<span class="nc" id="L46">                    authenticationRequest.getPassword()</span>
+                )
+        );
+<span class="nc" id="L49">        var user = userRepository.findByEmail(authenticationRequest.getEmail())</span>
+<span class="nc" id="L50">                .orElseThrow();</span>
+<span class="nc" id="L51">        var jwtToken = jwtService.generateToken(user);</span>
+<span class="nc" id="L52">        return AutheticationResponse.builder().idPerson(user.getIdPerson()).token(jwtToken).age(user.getAge()).message(&quot;Found&quot;).status(1).name(user.getName()).email(user.getEmail()).rol(user.getRol().getName()).build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
